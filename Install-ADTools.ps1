@@ -14,7 +14,7 @@
 # ============================================
 $ADFlow_URL = "https://raw.githubusercontent.com/Aractuse/ADFlow/refs/heads/main/Start-ADFlow.ps1"
 $ADFlow_7za_URL = "https://raw.githubusercontent.com/Aractuse/ADFlow/refs/heads/main/Tools/7za.exe"
-$NTFS_ACL_URL = "https://raw.githubusercontent.com/VOTRE_USER/VOTRE_REPO/main/SCRIPT2.ps1"
+$NTFS_ACL_URL = "https://raw.githubusercontent.com/Aractuse/Script-Collection/refs/heads/main/Collection%20AD/Get-NTFSACL.ps1"
 
 $ADFlow_Name = "Start-ADFlow.ps1"
 $ADFlow_7za_Name = "7za.exe"
