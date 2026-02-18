@@ -518,6 +518,44 @@ function Start-ACLAnalysis {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
+# OUVERTURE PROPRIETES DE SECURITE
+# ══════════════════════════════════════════════════════════════════════════════
+
+function Open-SecurityProperties {
+    param([string]$Path)
+
+    try {
+        # Utiliser Shell.Application pour ouvrir les proprietes
+        $shell = New-Object -ComObject Shell.Application
+
+        # Determiner si c'est un fichier ou un dossier
+        $item = Get-Item -Path $Path -ErrorAction Stop
+
+        if ($item.PSIsContainer) {
+            # C'est un dossier
+            $folder = $shell.NameSpace($Path)
+            $folderItem = $folder.Self
+            $folderItem.InvokeVerb("Properties")
+        }
+        else {
+            # C'est un fichier
+            $parentPath = Split-Path -Parent $Path
+            $fileName = Split-Path -Leaf $Path
+            $folder = $shell.NameSpace($parentPath)
+            $file = $folder.ParseName($fileName)
+            $file.InvokeVerb("Properties")
+        }
+
+        Write-Host ""
+        Write-Centered "$($Colors.Green)Proprietes ouvertes$($Colors.Reset) $($Colors.Gray)- Allez dans Securite > Avance > Effective Access$($Colors.Reset)"
+    }
+    catch {
+        Write-Host ""
+        Write-Centered "$($Colors.Red)Erreur : impossible d'ouvrir les proprietes$($Colors.Reset)"
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
 # SAISIE CHEMIN AVEC VALIDATION
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -580,15 +618,18 @@ function Main {
             
             Write-Host ""
             Draw-SeparatorCentered -Width 60
-            Write-Centered "$($Colors.Cyan)[Entree]$($Colors.Reset) Nouvelle analyse  $($Colors.Cyan)[Echap]$($Colors.Reset) Quitter"
+            Write-Centered "$($Colors.Cyan)[V]$($Colors.Reset) Effective Access  $($Colors.Cyan)[Entree]$($Colors.Reset) Nouvelle analyse  $($Colors.Cyan)[Echap]$($Colors.Reset) Quitter"
             Write-Host ""
-            
+
             $waitingInput = $true
             while ($waitingInput) {
                 if ([Console]::KeyAvailable) {
                     $key = [Console]::ReadKey($true)
-                    
+
                     switch ($key.Key) {
+                        "V" {
+                            Open-SecurityProperties -Path $path
+                        }
                         "Enter" {
                             $waitingInput = $false
                         }
