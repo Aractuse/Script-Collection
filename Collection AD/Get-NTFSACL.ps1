@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     ACL Search TUI - Analyse des permissions NTFS avec interface Text User Interface
 .DESCRIPTION
