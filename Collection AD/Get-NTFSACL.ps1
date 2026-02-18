@@ -217,12 +217,12 @@ function Draw-SeparatorCentered {
 function Test-NTFSSecurityModule {
     Clear-Host
     Write-Host ""
-    
+
     $command = Get-Command Add-NTFSAccess -ErrorAction SilentlyContinue
-    
+
     if (-not $command) {
         $modulePath = "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\NTFSSecurity"
-        
+
         if (Test-Path $modulePath) {
             try {
                 Import-Module NTFSSecurity -SkipEditionCheck -ErrorAction Stop
@@ -231,29 +231,124 @@ function Test-NTFSSecurityModule {
             catch {}
         }
     }
-    
+
     if (-not $command) {
-        Draw-BoxCentered -Title "ERREUR" -BorderColor $Colors.Red -MaxWidth 65 -Content @(
+        # Proposer l'installation automatique
+        Draw-BoxCentered -Title "Module manquant" -BorderColor $Colors.Yellow -MaxWidth 65 -Content @(
             "",
-            " $($Colors.Red)Module NTFSSecurity non disponible$($Colors.Reset)",
+            " $($Colors.Yellow)Module NTFSSecurity non disponible$($Colors.Reset)",
             "",
             " Le module est requis pour analyser les ACL NTFS.",
             "",
-            " $($Colors.Yellow)Solutions :$($Colors.Reset)",
-            " $($Colors.Gray)►$($Colors.Reset) Installer via PowerShell Gallery :",
-            "   $($Colors.Cyan)Install-Module -Name NTFSSecurity$($Colors.Reset)",
-            "",
-            " $($Colors.Gray)►$($Colors.Reset) Ou copier le module dans :",
-            "   $($Colors.Gray)C:\Windows\System32\WindowsPowerShell\v1.0\Modules\$($Colors.Reset)",
+            " $($Colors.Cyan)Tentative d'installation automatique...$($Colors.Reset)",
             ""
         )
-        
+
         Write-Host ""
-        Write-Centered "$($Colors.Gray)Appuyez sur une touche pour quitter...$($Colors.Reset)"
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        exit
+        Write-Centered "$($Colors.Cyan)[I]$($Colors.Reset) Installer automatiquement  $($Colors.Cyan)[Echap]$($Colors.Reset) Quitter"
+        Write-Host ""
+
+        $waitingInput = $true
+        $installModule = $false
+
+        while ($waitingInput) {
+            if ([Console]::KeyAvailable) {
+                $key = [Console]::ReadKey($true)
+
+                switch ($key.Key) {
+                    "I" {
+                        $installModule = $true
+                        $waitingInput = $false
+                    }
+                    "Escape" {
+                        $waitingInput = $false
+                    }
+                }
+            }
+            Start-Sleep -Milliseconds 50
+        }
+
+        if ($installModule) {
+            Clear-Host
+            Write-Host ""
+
+            Draw-BoxCentered -Title "Installation" -BorderColor $Colors.Cyan -MaxWidth 65 -Content @(
+                "",
+                " $($Colors.Cyan)Installation du module NTFSSecurity en cours...$($Colors.Reset)",
+                "",
+                " $($Colors.Gray)Veuillez patienter...$($Colors.Reset)",
+                ""
+            )
+
+            Write-Host ""
+
+            try {
+                # Verifier si NuGet est disponible
+                $nuget = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
+                if (-not $nuget) {
+                    Write-Centered "$($Colors.Gray)Installation du provider NuGet...$($Colors.Reset)"
+                    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+                }
+
+                # Installer le module
+                Write-Centered "$($Colors.Gray)Telechargement et installation de NTFSSecurity...$($Colors.Reset)"
+                Install-Module -Name NTFSSecurity -Force -Scope CurrentUser -AllowClobber -ErrorAction Stop
+
+                # Importer le module
+                Import-Module NTFSSecurity -SkipEditionCheck -ErrorAction Stop
+                $command = Get-Command Add-NTFSAccess -ErrorAction SilentlyContinue
+
+                if ($command) {
+                    Write-Host ""
+                    Draw-BoxCentered -Title "Succes" -BorderColor $Colors.Green -MaxWidth 65 -Content @(
+                        "",
+                        " $($Colors.Green)Module NTFSSecurity installe avec succes !$($Colors.Reset)",
+                        "",
+                        " $($Colors.Gray)Le programme va demarrer...$($Colors.Reset)",
+                        ""
+                    )
+                    Start-Sleep -Seconds 2
+                    return $true
+                }
+            }
+            catch {
+                $errorMessage = $_.Exception.Message
+                # Tronquer le message d'erreur si trop long
+                if ($errorMessage.Length -gt 55) {
+                    $errorMessage = $errorMessage.Substring(0, 52) + "..."
+                }
+
+                Clear-Host
+                Write-Host ""
+
+                Draw-BoxCentered -Title "Echec installation" -BorderColor $Colors.Red -MaxWidth 65 -Content @(
+                    "",
+                    " $($Colors.Red)L'installation automatique a echoue$($Colors.Reset)",
+                    "",
+                    " $($Colors.Gray)Erreur : $errorMessage$($Colors.Reset)",
+                    "",
+                    " $($Colors.Yellow)Solutions alternatives :$($Colors.Reset)",
+                    " $($Colors.Gray)►$($Colors.Reset) Executer PowerShell en Administrateur",
+                    " $($Colors.Gray)►$($Colors.Reset) Installer manuellement :",
+                    "   $($Colors.Cyan)Install-Module -Name NTFSSecurity -Scope CurrentUser$($Colors.Reset)",
+                    "",
+                    " $($Colors.Gray)►$($Colors.Reset) Ou copier le module dans :",
+                    "   $($Colors.Gray)C:\Windows\System32\WindowsPowerShell\v1.0\Modules\$($Colors.Reset)",
+                    ""
+                )
+
+                Write-Host ""
+                Write-Centered "$($Colors.Gray)Appuyez sur une touche pour quitter...$($Colors.Reset)"
+                $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                exit
+            }
+        }
+        else {
+            # L'utilisateur a choisi de quitter
+            exit
+        }
     }
-    
+
     return $true
 }
 
